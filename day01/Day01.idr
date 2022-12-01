@@ -17,16 +17,14 @@ asGroups = map (map cast)
          . groupWith (== "")
          . lines
 
+total
 maximum : List Int -> Maybe Int
-maximum = go Nothing
+maximum      [] = Nothing
+maximum (x::xs) = Just $ go x xs
     where
-    go : Maybe Int -> List Int -> Maybe Int
-    go        acc      [] = acc
-    go    Nothing (x::xs) = go (Just x) xs
-    go j@(Just y) (x::xs) =
-    if y > x
-        then go j xs
-        else go (Just x) xs
+    go : Int -> List Int -> Int
+    go acc      [] = acc
+    go acc (x::xs) = go (max acc x) xs
 
 partial
 part1 : List (List Int) -> Int
