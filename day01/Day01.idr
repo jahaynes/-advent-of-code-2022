@@ -6,11 +6,6 @@ import Data.String
 import System.File.ReadWrite
 
 partial
-fromRight : Either l r -> r
-fromRight (Left l)  = idris_crash "Unexpected left"
-fromRight (Right r) = r
-
-partial
 fromJust : Maybe a -> a
 fromJust Nothing  = idris_crash "Unexpected Nothing"
 fromJust (Just x) = x
@@ -37,14 +32,19 @@ partial
 part1 : List (List Int) -> Int
 part1 = fromJust . maximum . map sum
 
-partial
 part2 : List (List Int) -> Int
 part2 = sum . take 3 . reverse . sort . map sum
 
 partial
 main : IO ()
-main = do
-    contents <- fromRight <$> readFile "./input"
-    let groups = asGroups contents
-    printLn $ part1 groups
-    printLn $ part2 groups
+main =
+
+    case !(readFile "./input") of
+
+        Left l =>
+            putStrLn "Could not read input file"
+
+        Right contents => do
+            let groups = asGroups contents
+            printLn $ part1 groups
+            printLn $ part2 groups
