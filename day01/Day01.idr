@@ -1,48 +1,33 @@
 module Main
 
-import Data.List
 import Data.List1
 import Data.String
 import System.File.ReadWrite
 
-partial
-fromJust : Maybe a -> a
-fromJust Nothing  = idris_crash "Unexpected Nothing"
-fromJust (Just x) = x
-
-asGroups : String -> List (List Int)
-asGroups = map (map cast)
-         . filter (/= [""])
-         . map forget
+asGroups : String -> Maybe (List1 (List1 Int))
+asGroups = fromList
+         . map (map cast)
          . groupWith (== "")
          . lines
 
-total
-maximum : List Int -> Maybe Int
-maximum      [] = Nothing
-maximum (x::xs) = Just $ go x xs
-    where
-    go : Int -> List Int -> Int
-    go acc      [] = acc
-    go acc (x::xs) = go (max acc x) xs
+part1 : List1 (List1 Int) -> Int
+part1 = foldl1 max . map sum
 
-partial
-part1 : List (List Int) -> Int
-part1 = fromJust . maximum . map sum
+part2 : List1 (List1 Int) -> Int
+part2 = sum . take 3 . reverse . sort . forget . map sum
 
-part2 : List (List Int) -> Int
-part2 = sum . take 3 . reverse . sort . map sum
-
-partial
 main : IO ()
 main =
 
-    case !(readFile "./input") of
+    case !(readFile "./day01/input") of
 
         Left l =>
             putStrLn "Could not read input file"
 
-        Right contents => do
-            let groups = asGroups contents
-            printLn $ part1 groups
-            printLn $ part2 groups
+        Right contents =>
+            case asGroups contents of
+                Nothing =>
+                    putStrLn "Could not find any gorups in input"
+                Just groups => do
+                    printLn $ part1 groups
+                    printLn $ part2 groups
