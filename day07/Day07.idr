@@ -12,12 +12,6 @@ data Line = Cd String
           | Dir String
           | SizedFile Nat String
 
-Show Line where
-    show           (Cd name) = "$ cd " ++ name
-    show                  Ls = "$ ls"
-    show          (Dir name) = "dir " ++ name
-    show (SizedFile sz name) = show sz ++ " " ++ name
-
 parseLine : Parser (List Char) Line
 parseLine = Cd        <$> (pString "$ cd " *> pRest)
         <|> Ls        <$  (pString "$ ls")
@@ -28,8 +22,8 @@ data Node = NPath (List String)
           | NFile Nat (List String)
 
 Show Node where
-    show (NPath path)      = show path
-    show (NFile sz path)   = show sz ++ " " ++ show path
+    show (NPath path)    = show path
+    show (NFile sz path) = show sz ++ " " ++ show path
 
 Eq Node where
     NPath a         == NPath b         = a == b
@@ -71,37 +65,32 @@ buildPathSizes = foldl step empty . S.toList
                             Just sz => dsz + sz
             in insert path sz' acc
 
-part1 : SortedSet Node -> Nat
+part1 : SortedMap (List String) Nat -> Nat
 part1 = sum
       . filter (<= 100000)
       . map snd
       . M.toList
-      . buildPathSizes
 
-part2 : SortedSet Node -> IO ()
-part2 tree =
+part2 : SortedMap (List String) Nat -> Maybe Nat
+part2 pathSizeMap = do
 
     let diskSize = 70000000
 
-        maxSize  = diskSize - 30000000
+        maxSize = diskSize - 30000000
 
-        pathsToTry = S.toList . S.fromList
-                   . filter (not . null)
-                   . concatMap inits
-                   . mapMaybe getDir
-                   $ S.toList tree
+        pathSizes = sortBy (compare `on` snd)
+                  $ M.toList pathSizeMap
 
-    in traverse_ printLn pathsToTry
+    usedSize <- lookup ["/"] pathSizes
 
-    where
-    getDir : Node -> Maybe (List String)
-    getDir (NPath path) = Just path
-    getDir (NFile _ _)  = Nothing
+    case dropWhile (\(_, sz) => cast usedSize - cast sz > maxSize) pathSizes of
+        []           => Nothing
+        ((_, sz)::_) => Just sz
 
 main : IO ()
 main =
 
-    case !(readFile "./day07/sample_input") of
+    case !(readFile "./day07/input") of
 
         Left l =>
             putStrLn "Could not read input file"
@@ -113,10 +102,10 @@ main =
                 Left l =>
                     putStrLn $ "Did not parse input correctly: " ++ l
 
-                Right ("", ls) =>
-                    let tree = buildTree ls in
-                    do printLn $ part1 tree
-                       part2 tree
+                Right ("", ls) => do
+                    let pathSizes = buildPathSizes $ buildTree ls
+                    printLn $ part1 pathSizes
+                    printLn $ part2 pathSizes
 
                 Right _ =>
                     putStrLn "Did not parse input correctly"
