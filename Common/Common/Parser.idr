@@ -132,6 +132,10 @@ pString : String -> Parser (List Char) ()
 pString = pList . unpack
 
 export
+pRest : Parser (List Char) String
+pRest = pack <$> pTakeWhile (const True)
+
+export
 pItemMaybe : Eq a => a -> Parser (List a) (Maybe ())
 pItemMaybe x = MkParser $ \s =>
     case s of
