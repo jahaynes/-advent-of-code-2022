@@ -13,7 +13,7 @@ deps: Common/Common.ipkg
 	idris2 --install Common/Common.ipkg
 
 clean:
-	rm -rf build
+	rm -rf build Common/build
 
 Day01: build/exec/Day01
 build/exec/Day01: day01/Day01.idr
