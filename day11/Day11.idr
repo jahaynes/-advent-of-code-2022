@@ -12,16 +12,8 @@ import System.File.ReadWrite
 data BinOp =
     Plus | Times
 
-Show BinOp where
-    show Plus  = "+"
-    show Times = "*"
-
 data Arg =
-    Old | N Int
-
-Show Arg where
-    show Old = "old"
-    show (N n) = show n
+    Old | N Integer
 
 pArg : Parser (List Char) Arg
 pArg = (Old      <$  pString "old")
@@ -30,30 +22,21 @@ pArg = (Old      <$  pString "old")
 data Expr =
     MkExpr Arg BinOp Arg
 
-Show Expr where
-    show (MkExpr a op b) = "(" ++ unwords [show a, show op, show b] ++ ")"
-
 record Monkey where
     constructor MkMonkey
     n          : Nat
-    startItems : (List Int)
+    startItems : (List Integer)
     expr       : Expr
-    divTest    : Int
+    divTest    : Integer
     throwTrue  : Nat
     throwFalse : Nat
 
 data Inspection =
-    MkInspection (SortedMap Nat Nat)
+    MkInspection Int (SortedMap Nat Integer)
 
 parseBinOp : Parser (List Char) BinOp
 parseBinOp = (Plus  <$ pItem '+')
          <|> (Times <$ pItem '*')
-
-Show Monkey where
-    show (MkMonkey n ss ex dt ttr tfl) =
-        unwords [ "monkey", show n, show ss
-                , show ex, show dt, show ttr
-                , show tfl ]
 
 parseMonkey : Parser (List Char) Monkey
 parseMonkey = do
@@ -76,7 +59,7 @@ parseMonkey = do
         _ <- pRestOfLine
         pure $ MkExpr a o b
 
-evalExpr : Int -> Expr -> Int
+evalExpr : Integer -> Expr -> Integer
 evalExpr old (MkExpr a o b) =
     let a' = from a
         b' = from b
@@ -84,11 +67,11 @@ evalExpr old (MkExpr a o b) =
         Plus  => a' + b'
         Times => a' * b'
     where
-    from : Arg -> Int
+    from : Arg -> Integer
     from (N i) = i
     from Old   = old
 
-throwFromTo : Int -> Nat -> Nat -> SortedMap Nat Monkey -> Maybe (SortedMap Nat Monkey)
+throwFromTo : Integer -> Nat -> Nat -> SortedMap Nat Monkey -> Maybe (SortedMap Nat Monkey)
 throwFromTo w i1 i2 ms = do
     m1 <- lookup i1 ms
     m2 <- lookup i2 ms
@@ -103,16 +86,16 @@ throwFromTo w i1 i2 ms = do
 
 monkeyInspectedItem : Nat -> State Inspection ()
 monkeyInspectedItem mn = do
-    MkInspection ms <- get
+    MkInspection r ms <- get
     let ms' = case lookup mn ms of
                   Nothing => insert mn     1 ms
-                  Just c  => insert mn (S c) ms
-    put $ MkInspection ms'
+                  Just c  => insert mn (c+1) ms
+    put $ MkInspection r ms'
 
-part1 : SortedMap Nat Monkey -> Maybe Nat
-part1 monkeys =
+run : Nat -> (Integer -> Integer) -> SortedMap Nat Monkey -> Maybe Integer
+run nRounds relax monkeys =
 
-    let MkInspection inspection = fst . runState (rounds 20 monkeys) $ MkInspection empty
+    let MkInspection _ inspection = fst . runState (rounds nRounds monkeys) $ MkInspection 0 empty
 
     in case L.take 2 . reverse . sort . map snd $ M.toList inspection of
            [a, b] => Just $ a * b
@@ -128,17 +111,25 @@ part1 monkeys =
                 Nothing => pure ms
                 Just m  => step (S t) =<< foldlM (item m) ms m.startItems
             where
-            item : Monkey -> SortedMap Nat Monkey -> Int -> State Inspection (SortedMap Nat Monkey)
+            item : Monkey -> SortedMap Nat Monkey -> Integer -> State Inspection (SortedMap Nat Monkey)
             item m ms iw = do
                 monkeyInspectedItem m.n
                 let new      = evalExpr iw m.expr
-                    relieved = div new 3
+                    relieved = relax new
                     other    = if mod relieved m.divTest == 0
                                    then m.throwTrue
                                    else m.throwFalse
                 pure $ case throwFromTo relieved m.n other ms of
                            Just ms' => ms'
                            Nothing  => ms
+
+part1 : SortedMap Nat Monkey -> Maybe Integer
+part1 = run 20 (\w => div w 3)
+
+part2 : SortedMap Nat Monkey -> Maybe Integer
+part2 monkeys = do
+    let divisor = product $ map (.divTest) monkeys
+    run 10000 (`mod` divisor) monkeys
 
 main : IO ()
 main =
@@ -155,8 +146,10 @@ main =
                 Left l =>
                     putStrLn $ "Did not parse input correctly: " ++ l
 
-                Right (_, monkeys) =>
-                    printLn . part1 . fromList $ map (\m => (m.n, m)) monkeys
+                Right (_, monkeys) => do
+                    let monkeys' = fromList $ map (\m => (m.n, m)) monkeys
+                    printLn $ part1 monkeys'
+                    printLn $ part2 monkeys'
 
                 Right _ =>
                     putStrLn "Did not parse input correctly"
