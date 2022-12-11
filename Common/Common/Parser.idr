@@ -136,6 +136,10 @@ pRest : Parser (List Char) String
 pRest = pack <$> pTakeWhile (const True)
 
 export
+pRestOfLine : Parser (List Char) String
+pRestOfLine = pack <$> pTakeWhile (not . isNL) <* pTake 1
+
+export
 pItemMaybe : Eq a => a -> Parser (List a) (Maybe ())
 pItemMaybe x = MkParser $ \s =>
     case s of
@@ -162,3 +166,33 @@ pMany1 p = do
   if null xs
     then pFail "none found for pMany1"
     else pure xs
+
+export
+pMaybe : Parser s a -> Parser s (Maybe a)
+pMaybe (MkParser run) = MkParser $ \s =>
+    Right $ case run s of
+                Right (s', x) => (s', Just x)
+                Left _        => (s, Nothing)
+
+export
+pSepBy : Parser s b -> Parser s a -> Parser s (List a)
+pSepBy sep item = reverse <$> goItem []
+    where
+    mutual
+        goItem : List a -> Parser s (List a)
+        goItem acc = do
+            mItem <- pMaybe item
+            case mItem of
+                Nothing => pure acc
+                Just i  => goSep (i::acc)
+
+        goSep : List a -> Parser s (List a)
+        goSep acc = do
+            mSep <- pMaybe sep
+            case mSep of
+                Nothing => pure acc
+                Just _  => goItem acc
+
+export
+dbgViewRemainder : Nat -> Parser (List Char) (List Char)
+dbgViewRemainder n = MkParser $ \s => Right (s, take n s)
