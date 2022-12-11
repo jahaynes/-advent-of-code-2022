@@ -2,3 +2,4 @@ package Common
 
 modules = Common.Monad
         , Common.Parser
+        , Common.State
