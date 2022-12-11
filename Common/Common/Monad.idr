@@ -16,3 +16,11 @@ replicateM_ = go
     go : Nat -> m a -> m ()
     go     0   _ = pure ()
     go (S n) act = act >>= \_ => go n act
+
+export
+iterateM : Monad m => (a -> m a) -> Nat -> a -> m a
+iterateM f = go
+    where
+    go : Nat -> a -> m a
+    go     0 a = pure a
+    go (S n) a = go n =<< f a
