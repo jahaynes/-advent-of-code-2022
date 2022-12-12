@@ -54,4 +54,4 @@ build/exec/Day11: day11/Day11.idr
 
 Day12: build/exec/Day12
 build/exec/Day12: day12/Day12.idr
-	idris2 day12/Day12.idr -o Day12
+	idris2 day12/Day12.idr -p contrib -o Day12
