@@ -7,7 +7,8 @@ all: \
   Day07\
   Day08\
   Day09\
-  Day11
+  Day11\
+  Day12
 
 deps: Common/Common.ipkg
 	idris2 --install Common/Common.ipkg
@@ -50,3 +51,7 @@ build/exec/Day09: day09/Day09.idr
 Day11: build/exec/Day11
 build/exec/Day11: day11/Day11.idr
 	idris2 day11/Day11.idr -p contrib -p Common -o Day11
+
+Day12: build/exec/Day12
+build/exec/Day12: day12/Day12.idr
+	idris2 day12/Day12.idr -o Day12
