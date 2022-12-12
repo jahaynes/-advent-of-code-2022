@@ -20,6 +20,9 @@ parseSteps = concat <$> pLinesOf parseStep
 data Pos =
     MkPos Int Int
 
+data Rope =
+    MkRope Pos Pos
+
 Eq Pos where
     MkPos a b == MkPos c d = a == c && b == d
 
@@ -57,18 +60,23 @@ followHead (MkPos hx hy) (MkPos tx ty) =
     unit 0 = 0
     unit a = div a (abs a)
 
+stepRope : Char -> Rope -> Rope
+stepRope dir (MkRope headPos tailPos) =
+    let headPos' = stepHead headPos dir
+        tailPos' = followHead headPos' tailPos
+    in MkRope headPos' tailPos'
+
 part1 : List Char -> Nat
 part1 path =
     let headStart = MkPos 0 0
         tailStart = MkPos 0 0
-    in step (singleton tailStart) headStart tailStart path
+    in step (singleton tailStart) (MkRope headStart tailStart) path
     where
-    step : SortedSet Pos -> Pos -> Pos -> List Char -> Nat
-    step tailPoses       _       _      [] = length $ S.toList tailPoses
-    step tailPoses headPos tailPos (x::xs) =
-        let headPos' = stepHead headPos x
-            tailPos' = followHead headPos' tailPos
-        in step (insert tailPos' tailPoses) headPos' tailPos' xs
+    step : SortedSet Pos -> Rope -> List Char -> Nat
+    step tailPoses    _      [] = length $ S.toList tailPoses
+    step tailPoses rope (x::xs) =
+        let rope'@(MkRope a b) = stepRope x rope
+        in step (insert b tailPoses) rope' xs
 
 main : IO ()
 main =
