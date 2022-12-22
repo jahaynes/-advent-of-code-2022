@@ -8,7 +8,8 @@ all: \
   Day08\
   Day09\
   Day11\
-  Day12
+  Day12\
+  Meh
 
 deps: Common/Common.ipkg
 	idris2 --install Common/Common.ipkg
@@ -55,3 +56,7 @@ build/exec/Day11: day11/Day11.idr
 Day12: build/exec/Day12
 build/exec/Day12: day12/Day12.idr
 	idris2 day12/Day12.idr -p contrib -o Day12
+
+Meh: build/exec/Meh
+build/exec/Meh: meh/Meh.idr
+	idris2 meh/Meh.idr -p contrib -p Common -o Meh

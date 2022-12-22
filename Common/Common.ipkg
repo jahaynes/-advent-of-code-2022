@@ -1,5 +1,9 @@
 package Common
 
-modules = Common.Monad
+depends = contrib
+
+modules = Common.AStar
+        , Common.Heap
+        , Common.Monad
         , Common.Parser
         , Common.State
